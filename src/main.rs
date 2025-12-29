@@ -54,9 +54,7 @@ fn banner() {
 fn clear_screen() {
     print!("\x1B[2J\x1B[1;1H");
     let _ = io::stdout().flush();
-    for _ in 0..1 {
-        println!();
-    }
+    println!();
 }
 
 fn pause() {
@@ -163,7 +161,13 @@ impl Move {
     fn all_for_ruleset(r: Ruleset) -> Vec<Move> {
         match r {
             Ruleset::Classic => vec![Move::Rock, Move::Paper, Move::Scissors],
-            Ruleset::Extended => vec![Move::Rock, Move::Paper, Move::Scissors, Move::Lizard, Move::Spock],
+            Ruleset::Extended => vec![
+                Move::Rock,
+                Move::Paper,
+                Move::Scissors,
+                Move::Lizard,
+                Move::Spock,
+            ],
         }
     }
 }
@@ -248,10 +252,19 @@ impl Scoreboard {
     }
 
     fn ensure_player(&mut self, name: &str) {
-        self.players.entry(name.to_string()).or_insert_with(PlayerStats::default);
+        self.players
+            .entry(name.to_string())
+            .or_insert_with(PlayerStats::default);
     }
 
-    fn add_match_result(&mut self, p1: &str, p2: &str, winner: Option<&str>, p1_rounds: u32, p2_rounds: u32) {
+    fn add_match_result(
+        &mut self,
+        p1: &str,
+        p2: &str,
+        winner: Option<&str>,
+        p1_rounds: u32,
+        p2_rounds: u32,
+    ) {
         self.ensure_player(p1);
         self.ensure_player(p2);
 
@@ -311,7 +324,7 @@ fn view_scoreboard(scoreboard: &Scoreboard) {
 
         match choice {
             1 => rows.sort_by(|a, b| b.1.matches_won.cmp(&a.1.matches_won)),
-            2 => rows.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal)),
+            2 => rows.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap()),
             3 => rows.sort_by(|a, b| b.1.rounds_won.cmp(&a.1.rounds_won)),
             _ => {}
         }
@@ -361,9 +374,9 @@ fn new_game_setup() -> GameConfig {
     let (player2, difficulty) = match mode {
         Mode::SinglePlayer => {
             println!("\nChoose difficulty:");
-            println!("1) Easy (random)");
-            println!("2) Normal (semi-random)");
-            println!("3) Hard (tracks your habits)");
+            println!("1) Easy");
+            println!("2) Normal");
+            println!("3) Hard");
             let diff = match read_menu_choice(1, 3) {
                 1 => Difficulty::Easy,
                 2 => Difficulty::Normal,
@@ -384,8 +397,8 @@ fn new_game_setup() -> GameConfig {
     };
 
     println!("\nChoose ruleset:");
-    println!("1) Classic (Rock, Paper, Scissors)");
-    println!("2) Extended (Rock, Paper, Scissors, Lizard, Spock)");
+    println!("1) Classic");
+    println!("2) Extended");
     let ruleset = match read_menu_choice(1, 2) {
         1 => Ruleset::Classic,
         _ => Ruleset::Extended,
@@ -393,7 +406,7 @@ fn new_game_setup() -> GameConfig {
 
     println!("\nChoose match format:");
     println!("1) Single round");
-    println!("2) Best of N (odd number like 3, 5, 7)");
+    println!("2) Best of N");
     println!("3) First to K wins");
     let format = match read_menu_choice(1, 3) {
         1 => MatchFormat::SingleRound,
@@ -405,7 +418,7 @@ fn new_game_setup() -> GameConfig {
                         break v;
                     }
                 }
-                println!("Invalid. N must be an odd number like 3, 5, 7.");
+                println!("Invalid.");
             };
             MatchFormat::BestOfN(n)
         }
@@ -417,13 +430,13 @@ fn new_game_setup() -> GameConfig {
                         break v;
                     }
                 }
-                println!("Invalid. K must be 1 or more.");
+                println!("Invalid.");
             };
             MatchFormat::FirstToK(k)
         }
     };
 
-    let use_color = should_use_color() && read_yes_no("\nUse colors for results?", true);
+    let use_color = should_use_color() && read_yes_no("\nUse colors?", true);
     let show_ascii = read_yes_no("Show ASCII graphics?", true);
 
     GameConfig {
@@ -439,10 +452,7 @@ fn new_game_setup() -> GameConfig {
 }
 
 fn should_use_color() -> bool {
-    if std::env::var("NO_COLOR").is_ok() {
-        return false;
-    }
-    true
+    std::env::var("NO_COLOR").is_err()
 }
 
 fn run_match(state: &mut MatchState, scoreboard: &mut Scoreboard) {
@@ -527,73 +537,8 @@ fn run_match(state: &mut MatchState, scoreboard: &mut Scoreboard) {
             );
             scoreboard.save();
             MatchState::clear_saved();
-
-            println!("\nAfter match:");
-            println!("1) Rematch with same settings");
-            println!("2) Change ruleset or format");
-            println!("3) View match history");
-            println!("4) Return to main menu");
-
-            let post = read_menu_choice(1, 4);
-
-            match post {
-                1 => {
-                    let cfg = state.config.clone();
-                    *state = MatchState::new(cfg);
-                    continue;
-                }
-                2 => {
-                    let mut cfg = state.config.clone();
-
-                    println!("\nChoose ruleset:");
-                    println!("1) Classic");
-                    println!("2) Extended");
-                    cfg.ruleset = match read_menu_choice(1, 2) {
-                        1 => Ruleset::Classic,
-                        _ => Ruleset::Extended,
-                    };
-
-                    println!("\nChoose match format:");
-                    println!("1) Single round");
-                    println!("2) Best of N (odd)");
-                    println!("3) First to K");
-                    cfg.format = match read_menu_choice(1, 3) {
-                        1 => MatchFormat::SingleRound,
-                        2 => {
-                            let n = loop {
-                                let s = read_line("Enter N (odd number >= 1): ");
-                                if let Ok(v) = s.parse::<u32>() {
-                                    if v >= 1 && v % 2 == 1 {
-                                        break v;
-                                    }
-                                }
-                                println!("Invalid. N must be odd like 3, 5, 7.");
-                            };
-                            MatchFormat::BestOfN(n)
-                        }
-                        _ => {
-                            let k = loop {
-                                let s = read_line("Enter K (>= 1): ");
-                                if let Ok(v) = s.parse::<u32>() {
-                                    if v >= 1 {
-                                        break v;
-                                    }
-                                }
-                                println!("Invalid. K must be 1 or more.");
-                            };
-                            MatchFormat::FirstToK(k)
-                        }
-                    };
-
-                    *state = MatchState::new(cfg);
-                    continue;
-                }
-                3 => {
-                    view_match_history(state);
-                    return;
-                }
-                _ => return,
-            }
+            pause();
+            return;
         }
     }
 }
@@ -633,24 +578,6 @@ fn print_match_header(state: &MatchState) {
     println!("Round: {}\n", state.round_number + 1);
 }
 
-fn round_banner(w: RoundWinner, p1: &str, p2: &str) -> String {
-    match w {
-        RoundWinner::Tie => "===== TIE ROUND =====".to_string(),
-        RoundWinner::Player1 => format!("===== {} WINS THE ROUND =====", p1),
-        RoundWinner::Player2 => format!("===== {} WINS THE ROUND =====", p2),
-    }
-}
-
-fn move_ascii(m: Move) -> &'static str {
-    match m {
-        Move::Rock => "    _______\n---'   ____)\n      (_____)\n      (_____)\n      (____)\n---.__(___)\n",
-        Move::Paper => "     _______\n---'   ____)____\n          ______)\n          _______)\n         _______)\n---.__________)\n",
-        Move::Scissors => "    _______\n---'   ____)____\n          ______)\n       __________)\n      (____)\n---.__(___)\n",
-        Move::Lizard => "   (\\_/)\n   ( •_•)\n  / > 🦎\n",
-        Move::Spock => "    🖖\n  SPOCK\n",
-    }
-}
-
 fn print_round_summary(state: &MatchState, p1: Move, p2: Move, winner: RoundWinner) {
     let cfg = &state.config;
 
@@ -658,54 +585,24 @@ fn print_round_summary(state: &MatchState, p1: Move, p2: Move, winner: RoundWinn
     println!("{} chose: {}", cfg.player1, p1.name());
     println!("{} chose: {}", cfg.player2, p2.name());
 
-    println!("\n{}", round_banner(winner, &cfg.player1, &cfg.player2));
-
-    if cfg.show_ascii {
-        println!("\n{}:\n{}", cfg.player1, move_ascii(p1));
-        println!("{}:\n{}", cfg.player2, move_ascii(p2));
-    }
-
-    let result_text = match winner {
-        RoundWinner::Tie => "Result: Tie",
-        RoundWinner::Player1 => "Result: Player 1 wins the round",
-        RoundWinner::Player2 => "Result: Player 2 wins the round",
-    };
-
-    println!("\n{}", colorize(cfg.use_color, winner, result_text));
+    println!(
+        "\n{}",
+        match winner {
+            RoundWinner::Tie => "===== TIE ROUND =====".to_string(),
+            RoundWinner::Player1 => format!("===== {} WINS =====", cfg.player1),
+            RoundWinner::Player2 => format!("===== {} WINS =====", cfg.player2),
+        }
+    );
 
     println!(
         "\nCurrent Score: {} {} - {} {}",
         cfg.player1, state.p1_round_wins, state.p2_round_wins, cfg.player2
     );
-
-    match cfg.format {
-        MatchFormat::BestOfN(n) => {
-            let needed = n / 2 + 1;
-            println!("First to {} round wins takes the match.", needed);
-        }
-        MatchFormat::FirstToK(k) => {
-            println!("First to {} round wins takes the match.", k);
-        }
-        MatchFormat::SingleRound => {}
-    }
-}
-
-fn colorize(use_color: bool, winner: RoundWinner, s: &str) -> String {
-    if !use_color {
-        return s.to_string();
-    }
-    match winner {
-        RoundWinner::Player1 => format!("\x1b[32m{}\x1b[0m", s),
-        RoundWinner::Player2 => format!("\x1b[31m{}\x1b[0m", s),
-        RoundWinner::Tie => format!("\x1b[33m{}\x1b[0m", s),
-    }
 }
 
 fn view_match_history(state: &MatchState) {
     clear_screen();
     banner();
-
-    println!("Match History\n");
 
     if state.history.is_empty() {
         println!("No rounds played yet.");
@@ -714,20 +611,12 @@ fn view_match_history(state: &MatchState) {
     }
 
     for r in &state.history {
-        let w = match r.winner {
-            RoundWinner::Tie => "Tie".to_string(),
-            RoundWinner::Player1 => format!("Winner: {}", state.config.player1),
-            RoundWinner::Player2 => format!("Winner: {}", state.config.player2),
-        };
-
         println!(
-            "Round {:>2}: {} = {:<8} | {} = {:<8} | {}",
+            "Round {}: {} vs {} => {:?}",
             r.round,
-            state.config.player1,
             r.p1_move.name(),
-            state.config.player2,
             r.p2_move.name(),
-            w
+            r.winner
         );
     }
 
@@ -749,24 +638,11 @@ fn show_victory(state: &MatchState, winner: RoundWinner) {
         "\nFinal Score: {} {} - {} {}",
         cfg.player1, state.p1_round_wins, state.p2_round_wins, cfg.player2
     );
-
-    println!("\nShort match summary:");
-    let total_rounds = state.history.len();
-    let ties = state.history.iter().filter(|r| matches!(r.winner, RoundWinner::Tie)).count();
-    println!("Rounds played: {}", total_rounds);
-    println!("Ties: {}", ties);
 }
 
 fn check_match_winner(state: &MatchState) -> Option<RoundWinner> {
     match state.config.format {
-        MatchFormat::SingleRound => {
-            if state.round_number >= 1 {
-                let last = state.history.last().unwrap();
-                Some(last.winner)
-            } else {
-                None
-            }
-        }
+        MatchFormat::SingleRound => state.history.last().map(|r| r.winner),
         MatchFormat::BestOfN(n) => {
             let needed = n / 2 + 1;
             if state.p1_round_wins >= needed {
@@ -803,7 +679,7 @@ fn read_move_player(player_name: &str, ruleset: Ruleset) -> Move {
         if let Some(mv) = parse_move(&s, ruleset) {
             return mv;
         }
-        println!("Invalid move. Try again.\n");
+        println!("Invalid move.");
     }
 }
 
@@ -811,43 +687,25 @@ fn read_move_hidden(player_name: &str, ruleset: Ruleset) -> Move {
     clear_screen();
     banner();
 
-    println!("{}'s turn (input hidden)", player_name);
+    println!("{}'s turn", player_name);
     println!("Accepted inputs: {}", accepted_inputs_line(ruleset));
 
     loop {
-        print!("\nType your move (hidden): ");
-        let _ = io::stdout().flush();
-
         let s = read_password().unwrap_or_default();
-
         if let Some(mv) = parse_move(&s, ruleset) {
             return mv;
         }
-        println!("Invalid move. Try again.");
+        println!("Invalid move.");
     }
 }
 
 fn parse_move(input: &str, ruleset: Ruleset) -> Option<Move> {
-    let s = input.trim().to_lowercase();
-
-    match s.as_str() {
+    match input.trim().to_lowercase().as_str() {
         "rock" | "r" => Some(Move::Rock),
         "paper" | "p" => Some(Move::Paper),
         "scissors" | "s" => Some(Move::Scissors),
-        "lizard" | "l" => {
-            if matches!(ruleset, Ruleset::Extended) {
-                Some(Move::Lizard)
-            } else {
-                None
-            }
-        }
-        "spock" | "k" => {
-            if matches!(ruleset, Ruleset::Extended) {
-                Some(Move::Spock)
-            } else {
-                None
-            }
-        }
+        "lizard" | "l" if matches!(ruleset, Ruleset::Extended) => Some(Move::Lizard),
+        "spock" | "k" if matches!(ruleset, Ruleset::Extended) => Some(Move::Spock),
         _ => None,
     }
 }
@@ -872,7 +730,9 @@ fn decide_winner(ruleset: Ruleset, p1: Move, p2: Move) -> RoundWinner {
 fn classic_beats(a: Move, b: Move) -> bool {
     matches!(
         (a, b),
-        (Move::Rock, Move::Scissors) | (Move::Paper, Move::Rock) | (Move::Scissors, Move::Paper)
+        (Move::Rock, Move::Scissors)
+            | (Move::Paper, Move::Rock)
+            | (Move::Scissors, Move::Paper)
     )
 }
 
@@ -893,11 +753,9 @@ fn extended_beats(a: Move, b: Move) -> bool {
 }
 
 fn ai_move(state: &mut MatchState, human_move: Move) -> Move {
-    if state.config.mode == Mode::SinglePlayer {
-        state.human_recent.push(human_move);
-        if state.human_recent.len() > 12 {
-            state.human_recent.remove(0);
-        }
+    state.human_recent.push(human_move);
+    if state.human_recent.len() > 12 {
+        state.human_recent.remove(0);
     }
 
     let rules = state.config.ruleset;
@@ -907,8 +765,7 @@ fn ai_move(state: &mut MatchState, human_move: Move) -> Move {
     match diff {
         Difficulty::Easy => random_from(&all),
         Difficulty::Normal => {
-            let mut rng = rand::thread_rng();
-            let roll: u8 = rng.gen_range(0..100);
+            let roll: u8 = rand::thread_rng().gen_range(0..100);
             if roll < 65 {
                 random_from(&all)
             } else {
@@ -923,15 +780,11 @@ fn ai_move(state: &mut MatchState, human_move: Move) -> Move {
 }
 
 fn random_from(list: &[Move]) -> Move {
-    let mut rng = rand::thread_rng();
-    let idx = rng.gen_range(0..list.len());
+    let idx = rand::thread_rng().gen_range(0..list.len());
     list[idx]
 }
 
 fn most_common(list: &[Move]) -> Option<Move> {
-    if list.is_empty() {
-        return None;
-    }
     let mut freq: HashMap<Move, usize> = HashMap::new();
     for &m in list {
         *freq.entry(m).or_insert(0) += 1;
@@ -940,16 +793,13 @@ fn most_common(list: &[Move]) -> Option<Move> {
 }
 
 fn best_counter(ruleset: Ruleset, target: Move) -> Move {
-    let candidates = Move::all_for_ruleset(ruleset)
+    let candidates: Vec<Move> = Move::all_for_ruleset(ruleset)
         .into_iter()
-        .filter(|&m| {
-            let wins = match ruleset {
-                Ruleset::Classic => classic_beats(m, target),
-                Ruleset::Extended => extended_beats(m, target),
-            };
-            wins
+        .filter(|&m| match ruleset {
+            Ruleset::Classic => classic_beats(m, target),
+            Ruleset::Extended => extended_beats(m, target),
         })
-        .collect::<Vec<_>>();
+        .collect();
 
     if candidates.is_empty() {
         target
