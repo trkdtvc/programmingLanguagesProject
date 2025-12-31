@@ -15,7 +15,7 @@ fn main() {
         clear_screen();
         banner();
 
-        println!("Main Menu");
+        println!("          Main menu\n");
         println!("1) Start a new game");
         println!("2) Continue the saved game");
         println!("3) View the scoreboard");
@@ -47,7 +47,7 @@ fn main() {
 
 fn banner() {
     println!("==============================");
-    println!("   Rock, Paper, Scissors   ");
+    println!("    Rock, Paper, Scissors   ");
     println!("==============================\n");
 }
 
@@ -169,6 +169,50 @@ impl Move {
                 Move::Spock,
             ],
         }
+    }
+}
+
+fn ascii_move(mv: Move) -> &'static str {
+    match mv {
+        Move::Rock => r#"
+    _______
+---'   ____)
+      (_____)
+      (_____)
+      (____)
+---.__(___)
+"#,
+        Move::Paper => r#"
+     _______
+---'   ____)____
+          ______)
+          _______)
+         _______)
+---.__________)
+"#,
+        Move::Scissors => r#"
+    _______
+---'   ____)____
+          ______)
+       __________)
+      (____)
+---.__(___)
+"#,
+        Move::Lizard => r#"
+     __,---._
+    /        `.
+   |   .-"""-. |
+   |  /  _ _  \|
+    \ | | | | |
+     \| |_| |_|/
+       \       /
+        `-.__.-'
+"#,
+        Move::Spock => r#"
+     🖖
+  Live long
+  and prosper
+"#,
     }
 }
 
@@ -353,7 +397,7 @@ fn new_game_setup() -> GameConfig {
     clear_screen();
     banner();
 
-    println!("New Game Setup\n");
+    println!("New game setup\n");
 
     let player1 = loop {
         let s = read_line("Player 1 name: ");
@@ -364,7 +408,7 @@ fn new_game_setup() -> GameConfig {
     };
 
     println!("\nChoose mode:");
-    println!("1) Single player");
+    println!("1) single-player");
     println!("2) Multiplayer");
     let mode = match read_menu_choice(1, 2) {
         1 => Mode::SinglePlayer,
@@ -582,8 +626,16 @@ fn print_round_summary(state: &MatchState, p1: Move, p2: Move, winner: RoundWinn
     let cfg = &state.config;
 
     println!("Round {}", state.round_number);
+
     println!("{} chose: {}", cfg.player1, p1.name());
+    if cfg.show_ascii {
+        println!("{}", ascii_move(p1));
+    }
+
     println!("{} chose: {}", cfg.player2, p2.name());
+    if cfg.show_ascii {
+        println!("{}", ascii_move(p2));
+    }
 
     println!(
         "\n{}",
