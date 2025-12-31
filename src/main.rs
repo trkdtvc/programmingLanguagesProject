@@ -58,7 +58,7 @@ fn clear_screen() {
 }
 
 fn pause() {
-    println!("\nPress Enter to continue...");
+    println!("\nPress Enter to continue");
     let mut s = String::new();
     let _ = io::stdin().read_line(&mut s);
 }
@@ -408,7 +408,7 @@ fn new_game_setup() -> GameConfig {
     };
 
     println!("\nChoose mode:");
-    println!("1) single-player");
+    println!("1) Single-player");
     println!("2) Multiplayer");
     let mode = match read_menu_choice(1, 2) {
         1 => Mode::SinglePlayer,
