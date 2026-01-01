@@ -588,7 +588,6 @@ fn run_match(state: &mut MatchState, scoreboard: &mut Scoreboard) {
         }
 
         if pending_p1.is_none() && pending_p2.is_none() {
-            state.round_number += 1;
             state.turn = Turn::WaitingP1;
         }
 
@@ -931,7 +930,7 @@ fn print_match_header(state: &MatchState) {
         }
     }
 
-    println!("Round: {}\n", state.round_number + 1);
+    println!("Round: {}\n", state.round_number);
 }
 
 fn print_round_summary(state: &MatchState, p1: Move, p2: Move, winner: RoundWinner) {
