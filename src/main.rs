@@ -286,7 +286,7 @@ impl MatchState {
         };
         Self {
             config,
-            round_number: 0,
+            round_number: 1,
             p1_round_wins: 0,
             p2_round_wins: 0,
             history: vec![],
@@ -296,7 +296,7 @@ impl MatchState {
     }
 
     fn reset_for_rematch(&mut self) {
-        self.round_number = 0;
+        self.round_number = 1;
         self.p1_round_wins = 0;
         self.p2_round_wins = 0;
         self.history.clear();
@@ -623,6 +623,7 @@ fn run_match(state: &mut MatchState, scoreboard: &mut Scoreboard) {
                 }
 
                 after_round_menu(state, scoreboard);
+                state.round_number += 1;
             }
             Mode::Multiplayer => {
                 if pending_p1.is_none() {
@@ -690,6 +691,7 @@ fn run_match(state: &mut MatchState, scoreboard: &mut Scoreboard) {
                     }
 
                     after_round_menu(state, scoreboard);
+                    state.round_number += 1;
                 }
             }
         }
@@ -1136,9 +1138,7 @@ fn decide_winner(ruleset: Ruleset, p1: Move, p2: Move) -> RoundWinner {
 fn classic_beats(a: Move, b: Move) -> bool {
     matches!(
         (a, b),
-        (Move::Rock, Move::Scissors)
-            | (Move::Paper, Move::Rock)
-            | (Move::Scissors, Move::Paper)
+        (Move::Rock, Move::Scissors) | (Move::Paper, Move::Rock) | (Move::Scissors, Move::Paper)
     )
 }
 
