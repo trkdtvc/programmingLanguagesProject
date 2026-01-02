@@ -414,7 +414,7 @@ fn view_scoreboard(scoreboard: &Scoreboard) {
         banner();
         println!(
             "{:<20} {:>6} {:>6} {:>8} {:>10}",
-            "Player", "MP", "MW", "RW", "WinRate"
+            "Player", "MP", "MW", "RW", "    Win Rate"
         );
         println!("{}", "-".repeat(56));
 
