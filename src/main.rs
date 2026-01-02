@@ -612,15 +612,17 @@ fn run_match(state: &mut MatchState, scoreboard: &mut Scoreboard) {
 
                 let winner = decide_winner(state.config.ruleset, p1, p2);
                 apply_round(state, p1, p2, winner);
-
+                
                 clear_screen();
                 banner();
                 print_round_summary(state, p1, p2, winner);
-
+                
                 if let Some(match_winner) = check_match_winner(state) {
-                    handle_match_end(state, scoreboard, match_winner);
-                    continue;
-                }
+                pause();
+                handle_match_end(state, scoreboard, match_winner);
+                continue;
+            }
+
 
                 after_round_menu(state, scoreboard);
                 state.round_number += 1;
@@ -677,18 +679,20 @@ fn run_match(state: &mut MatchState, scoreboard: &mut Scoreboard) {
                 if let (Some(p1), Some(p2)) = (pending_p1, pending_p2) {
                     let winner = decide_winner(state.config.ruleset, p1, p2);
                     apply_round(state, p1, p2, winner);
-
+                    
                     clear_screen();
                     banner();
                     print_round_summary(state, p1, p2, winner);
-
+                    
                     pending_p1 = None;
                     pending_p2 = None;
-
+                    
                     if let Some(match_winner) = check_match_winner(state) {
+                        pause(); 
                         handle_match_end(state, scoreboard, match_winner);
                         continue;
                     }
+
 
                     after_round_menu(state, scoreboard);
                     state.round_number += 1;
