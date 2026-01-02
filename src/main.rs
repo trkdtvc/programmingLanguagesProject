@@ -439,20 +439,20 @@ fn new_game_setup() -> GameConfig {
 
     println!("New game setup\n");
 
-    let player1 = loop {
-        let s = read_line("Player 1 name: ");
-        if !s.is_empty() {
-            break s;
-        }
-        println!("Name can't be empty.");
-    };
-
-    println!("\nChoose mode:");
+    println!("Choose mode:");
     println!("1) Single-player");
     println!("2) Multiplayer");
     let mode = match read_menu_choice(1, 2) {
         1 => Mode::SinglePlayer,
         _ => Mode::Multiplayer,
+    };
+
+    let player1 = loop {
+        let s = read_line("\nPlayer 1 name: ");
+        if !s.is_empty() {
+            break s;
+        }
+        println!("Name can't be empty.");
     };
 
     let (player2, difficulty) = match mode {
